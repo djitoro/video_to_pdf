@@ -1,20 +1,42 @@
+from vosk import Model, KaldiRecognizer
+import json
+import wave
 from moviepy.editor import VideoFileClip
 
-# uploading a video file
-video = VideoFileClip("video_1.mp4")
+# separating the sound from the video
+audio_f = VideoFileClip("video_1.mp4").audio
+# saving the audio file
+audio_f.write_audiofile("output.wav")
+# initializing a model with a small language pack
+model = Model(r"vosk-model-small-ru-0.4")
 
-# separating audio from video
-audio = video.audio
+wf = wave.open(r'output.wav', "rb")
+rec = KaldiRecognizer(model, 8000)
 
-'''
-# saving audio to a separate file
-audio.write_audiofile("audio.mp3")
-'''
+result = ''
+last_n = False
 
-# let's define the loss function:
-# insertions - inserting words that are not in the source text
-# substitutions - incorrect word substitutions
-# deletions - the system did not recognize the word / missed the word
-def loss_func(insertions, substitutions, deletions, total_word):
-    return (insertions + substitutions + deletions) / total_word
+while True:
+    # the frequency is taken from the documentation,
+    # but you can try to find better values
+    data = wf.readframes(8000)
 
+    if len(data) == 0:
+        break
+
+    if rec.AcceptWaveform(data):
+        # word recognition
+        res = json.loads(rec.Result())
+        # adding words to the result variable
+        if res['text'] != '':
+            result += f" {res['text']}"
+            last_n = False
+        # if there were no words, then an empty string is added
+        elif not last_n:
+            result += '\n'
+            last_n = True
+
+res = json.loads(rec.FinalResult())
+result += f" {res['text']}"
+
+print(result)
