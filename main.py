@@ -1,3 +1,7 @@
+# to do:
+# add audio preprocessing
+# add a module that would enable data preprocessing if necessary
+# add a module to split the audio track
 from vosk import Model, KaldiRecognizer
 import json
 import wave
